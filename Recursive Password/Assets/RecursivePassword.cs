@@ -300,7 +300,7 @@ public class RecursivePassword : MonoBehaviour {
          }
       }
       else {
-         if (Regex.Match(Command, "([a-zA-Z]){5}").Success && SubmitMode) {
+         if (Regex.Match(Command, "^([a-zA-Z]){5}$").Success && SubmitMode) {
             for (int i = 0; i < 5; i++) {
                while (ScreenTexts[i].text != Command[i].ToString()) {
                   ArrowSels[i].OnInteract();
