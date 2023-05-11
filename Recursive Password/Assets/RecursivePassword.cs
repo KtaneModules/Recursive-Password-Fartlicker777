@@ -285,39 +285,67 @@ public class RecursivePassword : MonoBehaviour {
    private readonly string TwitchHelpMessage = @"!{0} cycle to cycle the screens. Use !{0} toggle to toggle the mod. Use !{0} XXXXX to submit a word.";
 #pragma warning restore 414
 
-   IEnumerator ProcessTwitchCommand (string Command) {
-      Command = Command.Trim().ToUpper();
-      yield return null;
-      if (Command == "TOGGLE") {
+   IEnumerator ProcessTwitchCommand(string Command)
+   {
+      Command = Command.Trim().ToUpperInvariant();
+      Match m;
+      m = Regex.Match(Command, @"^\s*toggle\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+      if (m.Success) {
+         yield return null;
          ToggleSel.OnInteract();
+         yield break;
       }
-      else if (Command == "CYCLE") {
+      m = Regex.Match(Command, @"^\s*cycle\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+      if (m.Success) {
+         yield return null;
          for (int i = 0; i < 5; i++) {
             for (int j = 0; j < 5; j++) {
                ArrowSels[i].OnInteract();
-               yield return new WaitForSeconds(.2f);
+               yield return new WaitForSeconds(0.25f);
             }
          }
+         yield break;
       }
-      else {
-         if (Regex.Match(Command, "^([a-zA-Z]){5}$").Success && SubmitMode) {
-            for (int i = 0; i < 5; i++) {
-               while (ScreenTexts[i].text != Command[i].ToString()) {
-                  ArrowSels[i].OnInteract();
-                  yield return new WaitForSeconds(.1f);
+      m = Regex.Match(Command, @"^\s*cycle\s+(?<d>\d)\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+      if (m.Success) {
+         int num;
+         if (!int.TryParse(m.Groups["d"].Value, out num) || num < 1 || num > 5)
+            yield break;
+         yield return null;
+         for (int i = 0; i < 5; i++) {
+            ArrowSels[num - 1].OnInteract();
+            yield return new WaitForSeconds(1f);
+         }
+         yield break;
+      }
+      m = Regex.Match(Command, @"^([a-zA-Z]){5}$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+      if (m.Success && SubmitMode) {
+         yield return null;
+         for (int i = 0; i < 5; i++) {
+            while (ScreenTexts[i].text != Command[i].ToString()) {
+               var current = ScreenTexts[i].text[0] - 'A';
+               var target = Command[i] - 'A';
+               var distance = (Math.Abs(current - target) + 13) % 26 - 13;
+               if (current > target) {
+                   distance *= -1;
                }
+               if (distance > 0)
+                   ArrowSels[i].OnInteract();
+               else if (distance < 0)
+                   ArrowSels[i + 5].OnInteract();
+               yield return new WaitForSeconds(.1f);
             }
-            ToggleSel.OnInteract();
          }
-         else {
-            yield return "sendtochaterror I don't understand!";
-         }
+         ToggleSel.OnInteract();
+         yield break;
       }
    }
 
    IEnumerator TwitchHandleForcedSolve () {
-      yield return ProcessTwitchCommand("toggle");
-      yield return new WaitForSeconds(.1f);
+      if (!SubmitMode) {
+          yield return ProcessTwitchCommand("toggle");
+          yield return new WaitForSeconds(.1f);
+      }
       yield return ProcessTwitchCommand (WordList[Password]);
    }
 }
