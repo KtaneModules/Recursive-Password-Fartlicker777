@@ -19,7 +19,7 @@ MonoBehaviour:
     hidden within the five passwords by determining which letters are faulty.\n\nModeling
     by quandale wuengle/queef wellington/Quwu Wowo/QED.\n\nThe manual can be found
     within the manuals folder of your game, or at ktane.timwi.de.\n\nIf there are
-    any bugs contact Fartlicker777#9169 on Discord.\r"
-  version: 1.0
+    any bugs contact VFlyer on the KTANE Discord.\r"
+  version: 1.0.01
   outputFolder: build
   previewImage: {fileID: 2800000, guid: 1cd7b192fbfdff04fb529bdc3fbb3f84, type: 3}

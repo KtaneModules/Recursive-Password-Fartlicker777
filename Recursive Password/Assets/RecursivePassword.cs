@@ -282,32 +282,47 @@ public class RecursivePassword : MonoBehaviour {
    }
 
 #pragma warning disable 414
-   private readonly string TwitchHelpMessage = @"!{0} cycle to cycle the screens. Use !{0} toggle to toggle the mod. Use !{0} XXXXX to submit a word.";
+   private readonly string TwitchHelpMessage = "\"!{0} cycle\" to cycle the screens, specify a digit to cycle a specific column slowly, or \"slow\"/\"slower\"/\"fast\"/\"faster\" to adjust cycling all screens. \"!{0} toggle\" to toggle the mod. \"!{0} XXXXX\" to submit a word.";
 #pragma warning restore 414
 
    IEnumerator ProcessTwitchCommand(string Command)
    {
       Command = Command.Trim().ToUpperInvariant();
-      Match m;
-      m = Regex.Match(Command, @"^\s*toggle\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-      if (m.Success) {
+      Match mToggle = Regex.Match(Command, @"^\s*toggle\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant),
+            mCycleAll = Regex.Match(Command, @"^\s*cycle(\s((slow|fast)(er)?))?\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant),
+            mCycleSpec = Regex.Match(Command, @"^\s*cycle\s+(?<d>\d)\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant),
+            m = Regex.Match(Command, @"^([a-zA-Z]){5}$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+      if (mToggle.Success) {
          yield return null;
          ToggleSel.OnInteract();
+            if (SubmitMode)
+                yield return "strike";
          yield break;
       }
-      m = Regex.Match(Command, @"^\s*cycle\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-      if (m.Success) {
+      if (mCycleAll.Success) {
+            var cycleSpeed = 0.75f;
+            if (mCycleAll.Value.Split().Length > 1)
+                switch (mCycleAll.Value.Split().Last().ToLowerInvariant())
+                {
+                    case "slow":
+                        cycleSpeed = 1f; break;
+                    case "slower":
+                        cycleSpeed = 2f; break;
+                    case "fast":
+                        cycleSpeed = 0.5f; break;
+                    case "faster":
+                        cycleSpeed = 0.25f; break;
+                }
          yield return null;
          for (int i = 0; i < 5; i++) {
             for (int j = 0; j < 5; j++) {
                ArrowSels[i].OnInteract();
-               yield return new WaitForSeconds(0.25f);
+               yield return string.Format("trywaitcancel {0}", cycleSpeed);
             }
          }
          yield break;
       }
-      m = Regex.Match(Command, @"^\s*cycle\s+(?<d>\d)\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-      if (m.Success) {
+      if (mCycleSpec.Success) {
          int num;
          if (!int.TryParse(m.Groups["d"].Value, out num) || num < 1 || num > 5)
             yield break;
@@ -318,7 +333,6 @@ public class RecursivePassword : MonoBehaviour {
          }
          yield break;
       }
-      m = Regex.Match(Command, @"^([a-zA-Z]){5}$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
       if (m.Success && SubmitMode) {
          yield return null;
          for (int i = 0; i < 5; i++) {
@@ -337,6 +351,8 @@ public class RecursivePassword : MonoBehaviour {
             }
          }
          ToggleSel.OnInteract();
+         yield return "solve";
+         yield return "strike";
          yield break;
       }
    }
